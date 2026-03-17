@@ -55,15 +55,24 @@ export async function GET(request: Request) {
       .eq('closed_date', date)
       .single()
 
+    const { data: vacation } = await supabase
+      .from('vacation_periods')
+      .select('id')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .lte('start_date', date)
+      .gte('end_date', date)
+      .limit(1)
+
     const dayOfWeek = new Date(date).getDay() // 0 = Sunday, 1 = Monday, ...
     
     // Logic: 
     // - If it's in closed_days with is_closed=true -> CLOSED
-    // - If it's Monday AND is_monday_closed=true AND NOT in closed_days (or is_closed=true) -> CLOSED
+    // - If it falls within a vacation period -> CLOSED
+    // - If it's Monday AND is_monday_closed=true AND NOT in closed_days -> CLOSED
     const isMonday = dayOfWeek === 1
     const closedOnMondays = restaurant?.is_monday_closed
     
-    if (closedDay?.is_closed) {
+    if (closedDay?.is_closed || vacation) {
       return NextResponse.json({ availableTimes: [] })
     }
 

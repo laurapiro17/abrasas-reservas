@@ -1,8 +1,9 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { ArrowLeft, Clock, Users, Plus, Trash2, Save } from 'lucide-react'
+import { ArrowLeft, Clock, Users, Plus, Trash2, Save, Palmtree } from 'lucide-react'
 import Link from 'next/link'
-import { updateService, updateTable, createTable, deleteTable, updateRestaurant } from './actions'
+import { updateService, updateTable, createTable, deleteTable, updateRestaurant, createVacation, deleteVacation } from './actions'
+import { format } from 'date-fns'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -35,6 +36,13 @@ export default async function SettingsPage() {
     .select('*')
     .eq('restaurant_id', RESTAURANT_ID)
     .order('name', { ascending: true })
+
+  // Fetch Vacations
+  const { data: vacations } = await serviceClient
+    .from('vacation_periods')
+    .select('*')
+    .eq('restaurant_id', RESTAURANT_ID)
+    .order('start_date', { ascending: true })
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans">
@@ -164,6 +172,84 @@ export default async function SettingsPage() {
                 </button>
               </form>
             ))}
+          </div>
+        </section>
+
+        {/* Vacations Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+              <Palmtree className="w-5 h-5 text-brand" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Vacation Periods</h2>
+              <p className="text-sm text-zinc-500">Block all reservations for specific date ranges.</p>
+            </div>
+          </div>
+
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-900/50 text-zinc-500 border-b border-zinc-800">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Range</th>
+                  <th className="px-6 py-3 font-medium">Reason</th>
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/50">
+                {vacations?.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-zinc-500">No vacation periods defined.</td>
+                  </tr>
+                ) : (
+                  vacations?.map((v) => (
+                    <tr key={v.id} className="group">
+                      <td className="px-6 py-3 font-medium">
+                        {format(new Date(v.start_date), 'dd/MM/yy')} — {format(new Date(v.end_date), 'dd/MM/yy')}
+                      </td>
+                      <td className="px-6 py-3 text-zinc-400">
+                        {v.reason || '-'}
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <form action={async () => {
+                          'use server';
+                          await deleteVacation(v.id)
+                        }}>
+                          <button className="p-1.5 text-zinc-500 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                
+                {/* Add New Vacation Row */}
+                <tr className="bg-zinc-900/20">
+                  <td className="px-6 py-4" colSpan={3}>
+                    <form action={createVacation} className="flex flex-col md:flex-row items-end gap-4">
+                      <div className="flex-1 grid grid-cols-2 gap-3 w-full">
+                        <div>
+                          <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Start Date</label>
+                          <input type="date" name="start_date" required className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">End Date</label>
+                          <input type="date" name="end_date" required className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white" />
+                        </div>
+                      </div>
+                      <div className="flex-[2] w-full">
+                        <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Reason (Optional)</label>
+                        <input name="reason" placeholder="e.g. Summer Holidays" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white" />
+                      </div>
+                      <button type="submit" className="bg-brand hover:bg-brand-hover text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap">
+                        Add Vacation
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 

@@ -3,7 +3,7 @@ export const revalidate = 0; // Disable full route caching for the dashboard
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings } from 'lucide-react'
+import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings, Printer } from 'lucide-react'
 import { format } from 'date-fns'
 import AdminDateSelector from '@/components/AdminDateSelector'
 import { toggleClosedDay } from './actions'
@@ -57,31 +57,64 @@ export default async function AdminDashboard({
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          header, .date-selector, .metrics, .actions-column, button, .new-btn, .settings-btn { display: none !important; }
+          body, .min-h-screen { background: white !important; color: black !important; }
+          .max-w-7xl { max-width: 100% !important; padding: 0 !important; }
+          .bg-zinc-950, .bg-zinc-900 { border: none !important; background: transparent !important; }
+          .text-white, .text-zinc-100 { color: black !important; }
+          .text-zinc-500, .text-zinc-400 { color: #666 !important; }
+          table { width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #eee !important; padding: 12px 6px !important; }
+          .print-header { display: block !important; margin-bottom: 20px; text-align: center; }
+          .print-header h1 { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+          .print-header p { font-size: 14px; color: #666; }
+        }
+        .print-header { display: none; }
+      `}} />
+      
       {/* Top Nav */}
       <header className="border-b border-zinc-800 bg-zinc-950 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <h1 className="text-xl font-bold tracking-tight">ABRASAS <span className="text-brand">Admin</span></h1>
         
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
-          <Link 
-            href="/admin/dashboard/settings" 
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 transition-colors text-zinc-300"
-            title="Settings"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden md:inline">Settings</span>
-          </Link>
-          <form action="/auth/signout" method="post">
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 transition-colors text-zinc-300">
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </form>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/admin/dashboard/customers"
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <Users className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">History</span>
+            </Link>
+            <Link 
+              href="/admin/dashboard/settings"
+              className="settings-btn flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">Settings</span>
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button 
+                type="submit"
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-all text-xs font-medium"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8">
+        
+        <div className="print-header">
+           <h1>ABRASAS BLANES</h1>
+           <p>Reservas para el d&iacute;a {format(new Date(selectedDate), 'dd/MM/yyyy')}</p>
+        </div>
         
         {/* Date Selector & Metrics */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -123,13 +156,22 @@ export default async function AdminDashboard({
         <div className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Reservations for {format(new Date(selectedDate), 'MMMM d, yyyy')}</h2>
-            <Link
-              href="/admin/dashboard/new"
-              className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Reservation
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 rounded-xl text-sm font-medium transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                <span className="hidden sm:inline">Print List</span>
+              </button>
+              <Link
+                href="/admin/dashboard/new"
+                className="new-btn flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Reservation
+              </Link>
+            </div>
           </div>
           
           <div className="overflow-x-auto">

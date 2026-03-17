@@ -82,9 +82,41 @@ export async function createTable(formData: FormData) {
   revalidatePath('/admin/dashboard/settings')
 }
 
-export async function deleteTable(id: string) {
-  const supabase = await createServiceClient()
+export async function createVacation(formData: FormData) {
+  const supabase = createServiceClient()
+  const startDate = formData.get('start_date') as string
+  const endDate = formData.get('end_date') as string
+  const reason = formData.get('reason') as string
+
+  const { error } = await supabase
+    .from('vacation_periods')
+    .insert({
+      restaurant_id: RESTAURANT_ID,
+      start_date: startDate,
+      end_date: endDate,
+      reason: reason || null
+    })
+
+  if (error) throw new Error(error.message)
   
+  revalidatePath('/admin/dashboard/settings')
+  revalidatePath('/')
+}
+
+export async function deleteVacation(id: string) {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('vacation_periods')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+  
+  revalidatePath('/admin/dashboard/settings')
+  revalidatePath('/')
+}
+export async function deleteTable(id: string) {
+  const supabase = createServiceClient()
   const { error } = await supabase
     .from('restaurant_tables')
     .delete()
