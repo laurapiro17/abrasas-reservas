@@ -14,6 +14,7 @@ CREATE TABLE restaurants (
     name TEXT NOT NULL,
     phone_contact TEXT,
     max_party_size INT DEFAULT 8,
+    is_monday_closed BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
