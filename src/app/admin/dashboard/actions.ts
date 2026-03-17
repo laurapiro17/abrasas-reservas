@@ -48,3 +48,20 @@ export async function toggleClosedDay(date: string, currentlyClosed: boolean) {
   revalidatePath('/admin/dashboard')
   revalidatePath('/')
 }
+
+export async function updateTablePosition(tableId: string, x: number, y: number) {
+  const supabase = createServiceClient()
+  
+  const { error } = await supabase
+    .from('restaurant_tables')
+    .update({ x_pos: x, y_pos: y })
+    .eq('id', tableId)
+
+  if (error) {
+    console.error("Error updating table position:", error)
+    return { success: false, error }
+  }
+
+  revalidatePath('/admin/dashboard')
+  return { success: true }
+}

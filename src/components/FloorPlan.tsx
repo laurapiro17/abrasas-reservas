@@ -1,7 +1,6 @@
-'use client'
-
-import { useState } from 'react'
-import { Users, Clock, Info } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Users, Clock, Info, Move, Save, Check, X } from 'lucide-react'
+import { updateTablePosition } from '@/app/admin/dashboard/actions'
 
 interface Table {
   id: string
@@ -22,13 +21,21 @@ interface Reservation {
 
 export default function FloorPlan({ tables, reservations }: { tables: Table[], reservations: Reservation[] }) {
   const [selectedTime, setSelectedTime] = useState<string>('13:00')
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [localTables, setLocalTables] = useState<Table[]>(tables)
+  const [draggingTableId, setDraggingTableId] = useState<string | null>(null)
+  const floorRef = useRef<HTMLDivElement>(null)
+
+  // Sync with props if they change
+  useEffect(() => {
+    setLocalTables(tables)
+  }, [tables])
 
   const timeToMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number)
     return h * 60 + m
   }
 
-  // Check if a table is occupied at the selected time (with a 90 min window)
   const getTableStatus = (tableId: string) => {
     const selMins = timeToMinutes(selectedTime)
     const activeRes = reservations.find(r => {
@@ -36,33 +43,79 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
       if (['cancelled', 'no_show'].includes(r.status)) return false
       
       const resMins = timeToMinutes(r.reservation_time)
-      // Assume 90 mins duration for visual check
       return selMins >= resMins && selMins < resMins + 90
     })
-
     return activeRes
   }
 
-  // Generate times for the selector (13:00 - 16:00 and 20:00 - 23:30)
   const times = [
     '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
     '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'
   ]
 
+  const handleMouseDown = (e: React.MouseEvent, tableId: string) => {
+    if (!isEditMode) return
+    setDraggingTableId(tableId)
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingTableId || !floorRef.current) return
+
+    const rect = floorRef.current.getBoundingClientRect()
+    const x = Math.round((e.clientX - rect.left - 35) / 1.5) // Adjust for scale and offset
+    const y = Math.round((e.clientY - rect.top - 35) / 1.5)
+
+    // Constrain to grid
+    const boundedX = Math.max(0, Math.min(x, 500))
+    const boundedY = Math.max(0, Math.min(y, 250))
+
+    setLocalTables(prev => prev.map(t => 
+      t.id === draggingTableId ? { ...t, x_pos: boundedX, y_pos: boundedY } : t
+    ))
+  }
+
+  const handleMouseUp = async () => {
+    if (!draggingTableId) return
+    
+    const table = localTables.find(t => t.id === draggingTableId)
+    if (table) {
+      await updateTablePosition(table.id, table.x_pos, table.y_pos)
+    }
+    
+    setDraggingTableId(null)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
-        <div className="flex items-center gap-3">
-          <Clock className="w-5 h-5 text-brand" />
-          <span className="text-sm font-medium text-zinc-300">Select Time to View Occupancy:</span>
-          <select 
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-brand"
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-brand" />
+            <span className="text-sm font-medium text-zinc-300">Occupancy at:</span>
+            <select 
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              disabled={isEditMode}
+              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
+            >
+              {times.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          
+          <button 
+            onClick={() => setIsEditMode(!isEditMode)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+              isEditMode 
+                ? 'bg-brand text-white border-brand shadow-lg shadow-brand/20' 
+                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:bg-zinc-800'
+            }`}
           >
-            {times.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+            {isEditMode ? <Check className="w-4 h-4" /> : <Move className="w-4 h-4" />}
+            {isEditMode ? 'GUARDAR PLANO' : 'EDITAR PLANO'}
+          </button>
         </div>
+
         <div className="flex items-center gap-6 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
@@ -75,22 +128,31 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
         </div>
       </div>
 
-      <div className="relative bg-zinc-950 border border-zinc-800 rounded-3xl p-8 min-h-[500px] overflow-auto flex items-center justify-center">
-        {/* The "Floor" grid */}
-        <div className="relative w-[800px] h-[400px] border border-zinc-800/30 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px] rounded-xl shadow-inner">
-          
-          {tables.map(table => {
+      <div 
+        className={`relative bg-zinc-950 border border-zinc-800 rounded-3xl p-8 min-h-[500px] overflow-hidden flex items-center justify-center ${isEditMode ? 'cursor-crosshair bg-brand/5' : ''}`}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <div 
+          ref={floorRef}
+          className="relative w-[800px] h-[400px] border border-zinc-800/30 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px] rounded-xl shadow-inner"
+        >
+          {localTables.map(table => {
             const reservation = getTableStatus(table.id)
             const isOccupied = !!reservation
+            const isDragging = draggingTableId === table.id
 
             return (
               <div 
                 key={table.id}
-                className={`absolute transition-all duration-500 group cursor-help
-                  ${isOccupied 
+                onMouseDown={(e) => handleMouseDown(e, table.id)}
+                className={`absolute transition-all ${isEditMode ? 'cursor-move hover:scale-105 active:scale-110 z-30' : 'cursor-help duration-500 group'}
+                  ${isOccupied && !isEditMode
                     ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_15px_-5px_#f97316]' 
-                    : 'bg-green-500/5 border-zinc-800 hover:border-green-500/40 hover:bg-green-500/5'}
-                  border-2 rounded-2xl flex flex-col items-center justify-center
+                    : 'bg-green-500/5 border-zinc-800 hover:border-brand/40 hover:bg-brand/5'}
+                  ${isDragging ? 'bg-brand/20 border-brand scale-110 z-50' : ''}
+                  border-2 rounded-2xl flex flex-col items-center justify-center select-none
                 `}
                 style={{ 
                   left: `${(table.x_pos || 0) * 1.5}px`, 
@@ -99,41 +161,53 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
                   height: '70px'
                 }}
               >
-                <span className={`text-xs font-bold ${isOccupied ? 'text-orange-400' : 'text-zinc-500'}`}>
+                <span className={`text-xs font-bold ${isDragging ? 'text-brand' : isOccupied && !isEditMode ? 'text-orange-400' : 'text-zinc-500'}`}>
                   {table.name}
                 </span>
                 <span className="text-[10px] text-zinc-600">({table.capacity})</span>
 
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-zinc-900 border border-zinc-800 rounded-xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 shadow-2xl">
-                  <div className="text-xs font-bold text-white mb-1 flex items-center justify-between">
-                    <span>Mesa {table.name}</span>
-                    <span className="text-zinc-500">Cap. {table.capacity}</span>
-                  </div>
-                  {isOccupied ? (
-                    <div className="space-y-1">
-                      <p className="text-orange-400 font-bold uppercase text-[9px]">OCUPADA @ {reservation.reservation_time.slice(0, 5)}</p>
-                      <p className="text-zinc-300 text-xs truncate">Cliente: {reservation.customer_name}</p>
-                      <p className="text-zinc-400 text-[10px] flex items-center gap-1">
-                        <Users className="w-3 h-3" /> {reservation.party_size} personas
-                      </p>
+                {!isEditMode && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-zinc-900 border border-zinc-800 rounded-xl p-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-40 shadow-2xl">
+                    <div className="text-xs font-bold text-white mb-1 flex items-center justify-between">
+                      <span>Mesa {table.name}</span>
+                      <span className="text-zinc-500">Cap. {table.capacity}</span>
                     </div>
-                  ) : (
-                    <p className="text-green-500 text-[10px] uppercase font-bold">Disponible</p>
-                  )}
-                </div>
+                    {isOccupied ? (
+                      <div className="space-y-1">
+                        <p className="text-orange-400 font-bold uppercase text-[9px]">OCUPADA @ {reservation.reservation_time.slice(0, 5)}</p>
+                        <p className="text-zinc-300 text-xs truncate">Cliente: {reservation.customer_name}</p>
+                        <p className="text-zinc-400 text-[10px] flex items-center gap-1">
+                          <Users className="w-3 h-3" /> {reservation.party_size} personas
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-green-500 text-[10px] uppercase font-bold">Disponible</p>
+                    )}
+                  </div>
+                )}
+                
+                {isEditMode && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-brand rounded-full flex items-center justify-center text-[10px] text-white animate-pulse">
+                    <Move className="w-2.5 h-2.5" />
+                  </div>
+                )}
               </div>
             )
           })}
         </div>
       </div>
       
-      <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
-        <Info className="w-5 h-5 text-orange-400 shrink-0" />
-        <p className="text-xs text-zinc-400 leading-relaxed">
-          <strong>Ajusta tu mapa:</strong> Puedes cambiar la posici&oacute;n de las mesas (X e Y) desde **Ajustes**. 
-          Valores m&aacute;s altos mueven la mesa a la derecha y abajo.
-        </p>
+      <div className="flex items-start gap-3 p-4 bg-brand/5 border border-brand/10 rounded-2xl">
+        <Info className="w-5 h-5 text-brand shrink-0" />
+        <div className="space-y-1">
+          <p className="text-xs text-zinc-400 leading-relaxed font-bold text-brand">
+            EDITOR VISUAL DE MAPA
+          </p>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Pulsa en **EDITAR PLANO** y arrastra las mesas con el rat&oacute;n para que coincidan con la realidad de tu local. 
+            Los cambios se guardan autom&aacute;ticamente al soltar la mesa.
+          </p>
+        </div>
       </div>
     </div>
   )

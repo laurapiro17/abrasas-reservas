@@ -119,14 +119,22 @@ export default async function AdminDashboard({
           <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
           <div className="flex items-center gap-4">
             <Link 
-              href="/admin/dashboard/reminders"
-              className="flex items-center gap-2 text-zinc-400 hover:text-brand transition-colors relative group"
-              title="Recordatorios de Mañana"
+              href="/admin/dashboard/reminders" 
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all relative"
+              title="Recordatorios"
             >
               <MessageSquare className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-brand rounded-full"></span>
-              <span className="hidden lg:inline text-sm font-medium">Reminders</span>
+              <div className="absolute top-2 right-2 w-2 h-2 bg-brand rounded-full border-2 border-zinc-950" />
             </Link>
+
+            <Link 
+              href="/admin/dashboard/customers" 
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all"
+              title="Clientes (CRM)"
+            >
+              <Users className="w-5 h-5" />
+            </Link>
+
             <Link 
               href="/admin/dashboard/analytics"
               className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
