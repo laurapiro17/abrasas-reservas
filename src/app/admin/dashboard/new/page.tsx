@@ -117,10 +117,10 @@ export default function NewReservationPage() {
           <hr className="border-zinc-800" />
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-zinc-400 mb-1">Nombre y Apellidos</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-              <input type="text" name="name" required placeholder="Customer Name" className={inputClass} />
+              <input type="text" name="name" required placeholder="Nombre y Apellidos del cliente" className={inputClass} />
             </div>
           </div>
 

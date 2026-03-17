@@ -64,6 +64,7 @@ export async function GET(request: Request) {
     if (servicesError) throw servicesError;
     if (!services || services.length === 0) {
       return NextResponse.json({ availableTimes: [] });
+    }
 
     // 3. Fetch current reservations for that date to check overlaps
     const { data: reservations, error: reservationsError } = await supabase

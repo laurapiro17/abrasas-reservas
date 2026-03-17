@@ -23,7 +23,7 @@ const step2Schema = step1Schema.extend({
 type Step1Data = z.infer<typeof step1Schema>;
 type BookingData = z.infer<typeof step2Schema>;
 
-export default function BookingForm() {
+export default function BookingForm({ whatsappNumber }: { whatsappNumber: string }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isChecking, setIsChecking] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -117,8 +117,8 @@ export default function BookingForm() {
 
   if (step === 3) {
     const data = form2.getValues();
-    const message = `Hello, I have a reservation for ${data.name} on ${data.date} at ${data.time} for ${data.partySize} people.`;
-    const whatsappLink = `https://wa.me/34123456789?text=${encodeURIComponent(message)}`;
+    const message = `Hola, tengo una reserva para ${data.name} el ${data.date} a las ${data.time} para ${data.partySize} personas.`;
+    const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
@@ -259,7 +259,7 @@ export default function BookingForm() {
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
               <input 
-                placeholder="Full Name"
+                placeholder="Nombre y Apellidos"
                 {...form2.register("name")} 
                 className="w-full bg-surface border border-border rounded-xl py-3 pl-10 pr-4 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all"
               />
