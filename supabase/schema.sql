@@ -53,6 +53,17 @@ CREATE TABLE closed_days (
     UNIQUE(restaurant_id, closed_date)
 );
 
+-- 3.6. Vacation Periods (Date ranges)
+CREATE TABLE vacation_periods (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT valid_range CHECK (end_date >= start_date)
+);
+
 -- 4. Reservations
 CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
