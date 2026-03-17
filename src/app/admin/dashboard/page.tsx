@@ -12,7 +12,7 @@ import FloorPlan from '@/components/FloorPlan'
 import CalendarView from '@/components/CalendarView'
 import { LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare } from 'lucide-react'
 import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
-import { formatWhatsAppLink, getConfirmationMessage, getReminderMessage } from '@/lib/whatsapp-utils'
+import { formatWhatsAppLink, getConfirmationMessage, getReminderMessage, getRejectionMessage } from '@/lib/whatsapp-utils'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -338,6 +338,17 @@ export default async function AdminDashboard({
                                rel="noopener noreferrer"
                                title="Send Reminder WhatsApp"
                                className="p-1.5 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 rounded-md transition-colors"
+                             >
+                               <MessageSquare className="w-4 h-4" />
+                             </a>
+                          )}
+                          {res.status === 'cancelled' && (
+                             <a 
+                               href={formatWhatsAppLink(res.customer_phone, getRejectionMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               title="Send Rejection WhatsApp"
+                               className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-md transition-colors"
                              >
                                <MessageSquare className="w-4 h-4" />
                              </a>

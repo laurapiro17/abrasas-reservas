@@ -19,3 +19,7 @@ export function getConfirmationMessage(name: string, date: string, time: string)
 export function getReminderMessage(name: string, date: string, time: string): string {
   return `Hola ${name}, te recordamos tu reserva en ABRASAS para MAÑANA (${date}) a las ${time}. Si no puedes venir, por favor avísanos respondiendo a este mensaje. ¡Gracias! 😊`;
 }
+
+export function getRejectionMessage(name: string, date: string, time: string): string {
+  return `Hola ${name}, lo sentimos, pero no podemos confirmar tu reserva en ABRASAS para el día ${date} a las ${time}. Disculpa las molestias. 🙏`;
+}
