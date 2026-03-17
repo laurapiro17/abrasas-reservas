@@ -41,17 +41,29 @@ export async function GET(request: Request) {
       return NextResponse.json({ availableTimes: [] });
     }
 
-    // 2. Fetch services for the restaurant
+    // 1. Check if the restaurant is closed on Mondays
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('is_monday_closed')
+      .eq('id', RESTAURANT_ID)
+      .single()
+
+    const dayOfWeek = new Date(date).getDay() // 0 = Sunday, 1 = Monday, ...
+    if (dayOfWeek === 1 && restaurant?.is_monday_closed) {
+      return NextResponse.json({ availableTimes: [] })
+    }
+
+    // 2. Fetch active services
     const { data: services, error: servicesError } = await supabase
-      .from("services")
-      .select("*")
-      .eq("restaurant_id", RESTAURANT_ID)
+      .from('services')
+      .select('*')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('is_active', true)
       .eq("is_active", true);
 
     if (servicesError) throw servicesError;
     if (!services || services.length === 0) {
       return NextResponse.json({ availableTimes: [] });
-    }
 
     // 3. Fetch current reservations for that date to check overlaps
     const { data: reservations, error: reservationsError } = await supabase

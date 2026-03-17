@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ArrowLeft, Clock, Users, Plus, Trash2, Save } from 'lucide-react'
 import Link from 'next/link'
-import { updateService, updateTable, createTable, deleteTable } from './actions'
+import { updateService, updateTable, createTable, deleteTable, updateRestaurant } from './actions'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -14,15 +14,23 @@ export default async function SettingsPage() {
     redirect('/admin/login')
   }
 
+  const serviceClient = createServiceClient()
+
+  // Fetch Restaurant Info
+  const { data: restaurant } = await serviceClient
+    .from('restaurants')
+    .select('*')
+    .eq('id', RESTAURANT_ID)
+    .single()
   // Fetch Services
-  const { data: services } = await supabase
+  const { data: services } = await serviceClient
     .from('services')
     .select('*')
     .eq('restaurant_id', RESTAURANT_ID)
     .order('type', { ascending: true })
 
   // Fetch Tables
-  const { data: tables } = await supabase
+  const { data: tables } = await serviceClient
     .from('restaurant_tables')
     .select('*')
     .eq('restaurant_id', RESTAURANT_ID)
@@ -39,6 +47,59 @@ export default async function SettingsPage() {
 
       <main className="flex-1 p-6 md:p-8 max-w-4xl mx-auto w-full space-y-12">
         
+        {/* Restaurant Info Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-brand" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Restaurant Info</h2>
+              <p className="text-sm text-zinc-500">Manage your business name and contact info.</p>
+            </div>
+          </div>
+
+          <form action={updateRestaurant} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-zinc-500 block mb-1">Restaurant Name</label>
+                <input 
+                  type="text" 
+                  name="name" 
+                  defaultValue={restaurant?.name} 
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 block mb-1">WhatsApp Phone (34600111222)</label>
+                <input 
+                  type="text" 
+                  name="phone_contact" 
+                  defaultValue={restaurant?.phone_contact || ''} 
+                  placeholder="34..."
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 py-2 border-t border-zinc-900 mt-2">
+              <input 
+                type="checkbox" 
+                name="is_monday_closed" 
+                id="is_monday_closed"
+                defaultChecked={restaurant?.is_monday_closed}
+                className="w-4 h-4 rounded border-zinc-800 bg-zinc-900 text-brand focus:ring-brand"
+              />
+              <label htmlFor="is_monday_closed" className="text-sm text-zinc-300">Cerrado los Lunes (Active closure)</label>
+            </div>
+
+            <button type="submit" className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors">
+              <Save className="w-4 h-4" />
+              Update Info
+            </button>
+          </form>
+        </section>
+
         {/* Services Section */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
@@ -57,18 +118,27 @@ export default async function SettingsPage() {
                 <input type="hidden" name="id" value={service.id} />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400">{service.type}</h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-zinc-500 block mb-1">Start Time</label>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Activo</label>
+                    <input 
+                      type="checkbox" 
+                      name="is_active" 
+                      defaultChecked={service.is_active}
+                      className="w-4 h-4 rounded border-zinc-800 bg-zinc-900 text-brand focus:ring-brand"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider">Start</label>
                     <input 
                       type="time" 
                       name="start_time" 
                       defaultValue={service.start_time.slice(0, 5)} 
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand outline-none"
+                      className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="text-xs text-zinc-500 block mb-1">End Time</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-wider">End</label>
                     <input 
                       type="time" 
                       name="end_time" 
