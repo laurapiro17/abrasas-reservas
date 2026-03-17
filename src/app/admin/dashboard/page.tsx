@@ -34,10 +34,10 @@ export default async function AdminDashboard({
   // Fetch reservations for the selected date
   const serviceClient = createServiceClient()
   
-  // Fetch Restaurant Info
+  // Fetch Restaurant Info (Selecting * to avoid crash if is_monday_closed is missing)
   const { data: restaurant } = await serviceClient
     .from('restaurants')
-    .select('is_monday_closed')
+    .select('*')
     .eq('id', RESTAURANT_ID)
     .single()
 

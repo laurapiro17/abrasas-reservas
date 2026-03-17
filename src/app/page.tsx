@@ -1,7 +1,17 @@
 import { Flame } from "lucide-react";
 import BookingForm from "@/components/BookingForm";
+import { createServiceClient } from "@/lib/supabase/server";
 
-export default function Home() {
+const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
+
+export default async function Home() {
+  const supabase = createServiceClient();
+  const { data: restaurant } = await supabase
+    .from("restaurants")
+    .select("phone_contact")
+    .eq("id", RESTAURANT_ID)
+    .single();
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-start p-6 md:p-24 relative overflow-hidden">
       {/* Background ambient glow */}
@@ -19,11 +29,11 @@ export default function Home() {
         <p className="text-zinc-400 text-center mb-10 text-sm">
           Reserva tu mesa para una experiencia inolvidable a la brasa.
         </p>
-
+ 
         <div className="w-full bg-surface border border-border rounded-3xl p-6 shadow-2xl relative">
           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent rounded-3xl pointer-events-none" />
           
-          <BookingForm />
+          <BookingForm whatsappNumber={restaurant?.phone_contact || "34123456789"} />
         </div>
         
         <div className="mt-12 text-center text-xs text-zinc-500">
