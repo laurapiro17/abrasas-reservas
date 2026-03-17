@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Users, Clock, Info, Move, Save, Check, X } from 'lucide-react'
+import { Users, Clock, Info, Move, Check } from 'lucide-react'
 import { updateTablePosition } from '@/app/admin/dashboard/actions'
 
 interface Table {
@@ -24,9 +24,9 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
   const [isEditMode, setIsEditMode] = useState(false)
   const [localTables, setLocalTables] = useState<Table[]>(tables)
   const [draggingTableId, setDraggingTableId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const floorRef = useRef<HTMLDivElement>(null)
 
-  // Sync with props if they change
   useEffect(() => {
     setLocalTables(tables)
   }, [tables])
@@ -38,14 +38,12 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
 
   const getTableStatus = (tableId: string) => {
     const selMins = timeToMinutes(selectedTime)
-    const activeRes = reservations.find(r => {
+    return reservations.find(r => {
       if (r.table_id !== tableId) return false
       if (['cancelled', 'no_show'].includes(r.status)) return false
-      
       const resMins = timeToMinutes(r.reservation_time)
       return selMins >= resMins && selMins < resMins + 90
     })
-    return activeRes
   }
 
   const times = [
@@ -53,36 +51,45 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
     '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'
   ]
 
-  const handleMouseDown = (e: React.MouseEvent, tableId: string) => {
+  const handleStart = (clientX: number, clientY: number, tableId: string) => {
     if (!isEditMode) return
+    const table = localTables.find(t => t.id === tableId)
+    if (!table || !floorRef.current) return
+
+    const rect = floorRef.current.getBoundingClientRect()
+    // Calculate where inside the table (70x70) the user clicked
+    const currentX = (table.x_pos || 0) * 1.5
+    const currentY = (table.y_pos || 0) * 1.5
+    const offsetX = (clientX - rect.left) - currentX
+    const offsetY = (clientY - rect.top) - currentY
+
     setDraggingTableId(tableId)
-    e.preventDefault()
+    setDragOffset({ x: offsetX, y: offsetY })
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMove = (clientX: number, clientY: number) => {
     if (!draggingTableId || !floorRef.current) return
 
     const rect = floorRef.current.getBoundingClientRect()
-    const x = Math.round((e.clientX - rect.left - 35) / 1.5) // Adjust for scale and offset
-    const y = Math.round((e.clientY - rect.top - 35) / 1.5)
+    // Calculate new position using the original offset to avoid jumping
+    const newX = Math.round((clientX - rect.left - dragOffset.x) / 1.5)
+    const newY = Math.round((clientY - rect.top - dragOffset.y) / 1.5)
 
-    // Constrain to grid
-    const boundedX = Math.max(0, Math.min(x, 500))
-    const boundedY = Math.max(0, Math.min(y, 250))
+    // Constrain to grid (800x400 area / 1.5 scale - table size)
+    const boundedX = Math.max(0, Math.min(newX, 480))
+    const boundedY = Math.max(0, Math.min(newY, 220))
 
     setLocalTables(prev => prev.map(t => 
       t.id === draggingTableId ? { ...t, x_pos: boundedX, y_pos: boundedY } : t
     ))
   }
 
-  const handleMouseUp = async () => {
+  const handleEnd = async () => {
     if (!draggingTableId) return
-    
     const table = localTables.find(t => t.id === draggingTableId)
     if (table) {
       await updateTablePosition(table.id, table.x_pos, table.y_pos)
     }
-    
     setDraggingTableId(null)
   }
 
@@ -129,10 +136,12 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
       </div>
 
       <div 
-        className={`relative bg-zinc-950 border border-zinc-800 rounded-3xl p-8 min-h-[500px] overflow-hidden flex items-center justify-center ${isEditMode ? 'cursor-crosshair bg-brand/5' : ''}`}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        className={`relative bg-zinc-950 border border-zinc-800 rounded-3xl p-8 min-h-[500px] overflow-hidden flex items-center justify-center ${isEditMode ? 'cursor-crosshair bg-brand/5 touch-none' : ''}`}
+        onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+        onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchEnd={handleEnd}
       >
         <div 
           ref={floorRef}
@@ -146,7 +155,8 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
             return (
               <div 
                 key={table.id}
-                onMouseDown={(e) => handleMouseDown(e, table.id)}
+                onMouseDown={(e) => { handleStart(e.clientX, e.clientY, table.id); e.preventDefault(); }}
+                onTouchStart={(e) => { handleStart(e.touches[0].clientX, e.touches[0].clientY, table.id); }}
                 className={`absolute transition-all ${isEditMode ? 'cursor-move hover:scale-105 active:scale-110 z-30' : 'cursor-help duration-500 group'}
                   ${isOccupied && !isEditMode
                     ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_15px_-5px_#f97316]' 
@@ -158,7 +168,8 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
                   left: `${(table.x_pos || 0) * 1.5}px`, 
                   top: `${(table.y_pos || 0) * 1.5}px`,
                   width: '70px',
-                  height: '70px'
+                  height: '70px',
+                  transitionProperty: isDragging ? 'none' : 'all'
                 }}
               >
                 <span className={`text-xs font-bold ${isDragging ? 'text-brand' : isOccupied && !isEditMode ? 'text-orange-400' : 'text-zinc-500'}`}>
@@ -201,11 +212,11 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
         <Info className="w-5 h-5 text-brand shrink-0" />
         <div className="space-y-1">
           <p className="text-xs text-zinc-400 leading-relaxed font-bold text-brand">
-            EDITOR VISUAL DE MAPA
+            EDITOR TÁCTIL DE MAPA
           </p>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Pulsa en **EDITAR PLANO** y arrastra las mesas con el rat&oacute;n para que coincidan con la realidad de tu local. 
-            Los cambios se guardan autom&aacute;ticamente al soltar la mesa.
+            Pulsa **EDITAR PLANO** y arrastra las mesas. Funciona con rat&oacute;n y pantallas t&aacute;ctiles (m&oacute;viles/tablets). 
+            Los cambios se guardan autom&aacute;ticamente.
           </p>
         </div>
       </div>
