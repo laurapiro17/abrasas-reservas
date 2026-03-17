@@ -314,83 +314,97 @@ export default async function AdminDashboard({
                       <td className="px-6 py-4 text-right">
                         {/* Status Toggle Actions */}
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           {/* PENDING ACTIONS */}
                            {res.status === 'pending' && (
-                            <form action={async () => {
-                              'use server';
-                              const sb = createServiceClient()
-                              await sb.from('reservations').update({ status: 'confirmed' }).eq('id', res.id)
-                            }}>
-                              <button title="Confirm" className="p-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-md transition-colors">
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                            </form>
-                          )}
-                          {res.status === 'pending' && (
-                             <a 
-                               href={formatWhatsAppLink(res.customer_phone, getConfirmationMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               title="Confirm & WhatsApp"
-                               className="p-1.5 bg-brand/10 text-brand hover:bg-brand/20 rounded-md transition-colors"
-                             >
-                               <MessageSquare className="w-4 h-4" />
-                             </a>
-                          )}
-                          {res.status === 'confirmed' && (
-                             <a 
-                               href={formatWhatsAppLink(res.customer_phone, getReminderMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               title="Send Reminder WhatsApp"
-                               className="p-1.5 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 rounded-md transition-colors"
-                             >
-                               <MessageSquare className="w-4 h-4" />
-                             </a>
-                          )}
-                          {res.status === 'cancelled' && (
+                             <>
+                               <form action={async () => {
+                                 'use server';
+                                 const sb = createServiceClient()
+                                 await sb.from('reservations').update({ status: 'confirmed' }).eq('id', res.id)
+                               }}>
+                                 <button title="Confirmar en DB" className="p-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-md transition-colors">
+                                   <CheckCircle className="w-4 h-4" />
+                                 </button>
+                               </form>
+                               <a 
+                                 href={formatWhatsAppLink(res.customer_phone, getConfirmationMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 title="Confirmar con WhatsApp"
+                                 className="p-1.5 bg-green-500 text-white hover:bg-green-600 rounded-md transition-colors shadow-lg shadow-green-500/20"
+                               >
+                                 <MessageSquare className="w-4 h-4" />
+                               </a>
+                               <a 
+                                 href={formatWhatsAppLink(res.customer_phone, getRejectionMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 title="Rechazar con WhatsApp"
+                                 className="p-1.5 bg-red-500 text-white hover:bg-red-600 rounded-md transition-colors shadow-lg shadow-red-500/20"
+                               >
+                                 <XCircle className="w-4 h-4" />
+                               </a>
+                             </>
+                           )}
+
+                           {/* CONFIRMED ACTIONS */}
+                           {res.status === 'confirmed' && (
+                             <>
+                               <a 
+                                 href={formatWhatsAppLink(res.customer_phone, getReminderMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 title="Enviar Recordatorio WhatsApp"
+                                 className="p-1.5 bg-zinc-700 text-white hover:bg-zinc-600 rounded-md transition-colors"
+                               >
+                                 <Clock className="w-4 h-4" />
+                               </a>
+                               <a 
+                                 href={formatWhatsAppLink(res.customer_phone, getRejectionMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 title="Cancelar y avisar por WhatsApp"
+                                 className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-md transition-colors"
+                               >
+                                 <XCircle className="w-4 h-4" />
+                               </a>
+                               <form action={async () => {
+                                 'use server';
+                                 const sb = createServiceClient()
+                                 await sb.from('reservations').update({ status: 'completed' }).eq('id', res.id)
+                               }}>
+                                 <button title="Completada (Sentados)" className="p-1.5 bg-zinc-800 text-zinc-400 hover:text-white rounded-md transition-colors">
+                                   <Check className="w-4 h-4" />
+                                 </button>
+                               </form>
+                             </>
+                           )}
+
+                           {/* CANCELLED ACTIONS */}
+                           {res.status === 'cancelled' && (
                              <a 
                                href={formatWhatsAppLink(res.customer_phone, getRejectionMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
                                target="_blank"
                                rel="noopener noreferrer"
-                               title="Send Rejection WhatsApp"
-                               className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-md transition-colors"
+                               title="Enviar mensaje de cancelación"
+                               className="p-1.5 bg-red-500 text-white hover:bg-red-600 rounded-md transition-colors"
                              >
                                <MessageSquare className="w-4 h-4" />
                              </a>
-                          )}
-                          {(res.status === 'pending' || res.status === 'confirmed') && (
-                            <form action={async () => {
-                              'use server';
-                              const sb = createServiceClient()
-                              await sb.from('reservations').update({ status: 'no_show' }).eq('id', res.id)
-                            }}>
-                              <button title="Mark No Show" className="p-1.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-md transition-colors">
-                                <AlertCircle className="w-4 h-4" />
-                              </button>
-                            </form>
-                          )}
+                           )}
+
+                           {/* GENERIC ACTIONS */}
                            {(res.status === 'pending' || res.status === 'confirmed') && (
-                            <form action={async () => {
-                              'use server';
-                              const sb = createServiceClient()
-                              await sb.from('reservations').update({ status: 'cancelled' }).eq('id', res.id)
-                            }}>
-                              <button title="Cancel" className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-md transition-colors">
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </form>
-                          )}
-                          {res.status === 'confirmed' && (
-                            <form action={async () => {
-                              'use server';
-                              const sb = createServiceClient()
-                              await sb.from('reservations').update({ status: 'completed' }).eq('id', res.id)
-                            }}>
-                              <button title="Mark Completed" className="p-1.5 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 rounded-md transition-colors">
-                                <Check className="w-4 h-4" />
-                              </button>
-                            </form>
-                          )}
+                             <form action={async () => {
+                               'use server';
+                               const sb = createServiceClient()
+                               await sb.from('reservations').update({ status: 'no_show' }).eq('id', res.id)
+                             }}>
+                               <button title="No se presentó" className="p-1.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-md transition-colors">
+                                 <AlertCircle className="w-4 h-4" />
+                               </button>
+                             </form>
+                           )}
                         </div>
                       </td>
                     </tr>
