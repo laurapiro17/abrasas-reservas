@@ -9,14 +9,16 @@ import AdminDateSelector from '@/components/AdminDateSelector'
 import { toggleClosedDay } from './actions'
 import PrintButton from '@/components/PrintButton'
 import FloorPlan from '@/components/FloorPlan'
-import { LayoutList, Map as MapIcon } from 'lucide-react'
+import CalendarView from '@/components/CalendarView'
+import { LayoutList, Map as MapIcon, Calendar as CalendarIconView } from 'lucide-react'
+import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
 export default async function AdminDashboard({
   searchParams,
 }: {
-  searchParams: { date?: string, view?: 'list' | 'map' }
+  searchParams: { date?: string, view?: 'list' | 'map' | 'calendar' }
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -57,11 +59,20 @@ export default async function AdminDashboard({
   // If no record, we follow the rule.
   const isDayClosed = closedDay ? closedDay.is_closed : ruleSaysClosed
 
+  // Fetch reservations
+  // If in calendar view, fetch the whole month, otherwise just the selected day
+  const monthStart = startOfMonth(new Date(selectedDate))
+  const monthEnd = endOfMonth(new Date(selectedDate))
+  
+  const fetchStart = view === 'calendar' ? format(monthStart, 'yyyy-MM-dd') : selectedDate
+  const fetchEnd = view === 'calendar' ? format(monthEnd, 'yyyy-MM-dd') : selectedDate
+
   const { data: reservations, error } = await serviceClient
     .from('reservations')
     .select('*, restaurant_tables(name)')
     .eq('restaurant_id', RESTAURANT_ID)
-    .eq('reservation_date', selectedDate)
+    .gte('reservation_date', fetchStart)
+    .lte('reservation_date', fetchEnd)
     .order('reservation_time', { ascending: true })
 
   if (error) {
@@ -196,11 +207,17 @@ export default async function AdminDashboard({
                   >
                     <LayoutList className="w-4 h-4" /> List
                   </Link>
-                  <Link 
+                   <Link 
                     href={`/admin/dashboard?date=${selectedDate}&view=map`}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'map' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-white'}`}
                   >
                     <MapIcon className="w-4 h-4" /> Map
+                  </Link>
+                  <Link 
+                    href={`/admin/dashboard?date=${selectedDate}&view=calendar`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'calendar' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    <CalendarIconView className="w-4 h-4" /> Calendar
                   </Link>
                </div>
             </div>
@@ -219,6 +236,16 @@ export default async function AdminDashboard({
           {view === 'map' ? (
             <div className="p-6">
                <FloorPlan tables={tables || []} reservations={reservations || []} />
+            </div>
+          ) : view === 'calendar' ? (
+            <div className="p-6">
+              <CalendarView 
+                reservations={reservations || []} 
+                onDateSelect={async (date) => {
+                  'use server'
+                  redirect(`/admin/dashboard?date=${date}&view=list`)
+                }}
+              />
             </div>
           ) : (
             <div className="overflow-x-auto">
