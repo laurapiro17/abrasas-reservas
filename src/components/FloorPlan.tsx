@@ -233,7 +233,7 @@ export default function FloorPlan({ tables, reservations }: { tables: Table[], r
             Editor de Plano Pro
           </p>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Pulsa **EDITAR PLANO** y arrastra las mesas. Funciona en m&oacute;vil deslizando el dedo. 
+            Pulsa <strong>EDITAR PLANO</strong> y arrastra las mesas. Funciona en m&oacute;vil deslizando el dedo. 
             Mueve la mesa y su&eacute;ltala para guardar su posici&oacute;n.
           </p>
         </div>

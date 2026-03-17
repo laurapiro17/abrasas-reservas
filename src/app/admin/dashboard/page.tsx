@@ -290,7 +290,7 @@ export default async function AdminDashboard({
                  reservations={reservations?.filter(r => r.status === 'confirmed' || r.status === 'completed') || []} 
                />
                <div className="mt-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-xs text-zinc-500 italic text-center">
-                 DATO: El mapa muestra solo reservas **CONFIRMADAS**. Gestiona las pendientes desde el buz&oacute;n.
+                 DATO: El mapa muestra solo reservas <strong>CONFIRMADAS</strong>. Gestiona las pendientes desde el buz&oacute;n.
                </div>
             </div>
           ) : view === 'calendar' ? (
