@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     const isMonday = dayOfWeek === 1
     const closedOnMondays = restaurant?.is_monday_closed
     
-    if (closedDay?.is_closed || vacation) {
+    if (closedDay?.is_closed || (vacation && vacation.length > 0)) {
       return NextResponse.json({ availableTimes: [] })
     }
 
