@@ -42,6 +42,17 @@ CREATE TABLE services (
     UNIQUE(restaurant_id, type)
 );
 
+-- 3.5. Closed Days (Specific dates)
+CREATE TABLE closed_days (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
+    closed_date DATE NOT NULL,
+    is_closed BOOLEAN DEFAULT TRUE, -- Can be used to force open a day too
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(restaurant_id, closed_date)
+);
+
 -- 4. Reservations
 CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

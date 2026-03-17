@@ -41,16 +41,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ availableTimes: [] });
     }
 
-    // 1. Check if the restaurant is closed on Mondays
+    // 1. Check if the restaurant is closed on Mondays OR force-closed for this specific date
     const { data: restaurant } = await supabase
       .from('restaurants')
       .select('is_monday_closed')
       .eq('id', RESTAURANT_ID)
       .single()
 
+    const { data: closedDay } = await supabase
+      .from('closed_days')
+      .select('is_closed')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('closed_date', date)
+      .single()
+
     const dayOfWeek = new Date(date).getDay() // 0 = Sunday, 1 = Monday, ...
-    if (dayOfWeek === 1 && restaurant?.is_monday_closed) {
+    
+    // Logic: 
+    // - If it's in closed_days with is_closed=true -> CLOSED
+    // - If it's Monday AND is_monday_closed=true AND NOT in closed_days (or is_closed=true) -> CLOSED
+    const isMonday = dayOfWeek === 1
+    const closedOnMondays = restaurant?.is_monday_closed
+    
+    if (closedDay?.is_closed) {
       return NextResponse.json({ availableTimes: [] })
+    }
+
+    if (isMonday && closedOnMondays && !closedDay) {
+       return NextResponse.json({ availableTimes: [] })
     }
 
     // 2. Fetch active services

@@ -1,11 +1,12 @@
 export const revalidate = 0; // Disable full route caching for the dashboard
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings } from 'lucide-react'
 import { format } from 'date-fns'
 import AdminDateSelector from '@/components/AdminDateSelector'
+import { toggleClosedDay } from './actions'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -27,7 +28,19 @@ export default async function AdminDashboard({
   const selectedDate = resolvedParams?.date || format(new Date(), 'yyyy-MM-dd')
 
   // Fetch reservations for the selected date
-  const { data: reservations, error } = await supabase
+  const serviceClient = createServiceClient()
+  
+  // Fetch closures for the selected date
+  const { data: closedDay } = await serviceClient
+    .from('closed_days')
+    .select('*')
+    .eq('restaurant_id', RESTAURANT_ID)
+    .eq('closed_date', selectedDate)
+    .single()
+
+  const isDayClosed = !!closedDay
+
+  const { data: reservations, error } = await serviceClient
     .from('reservations')
     .select('*, restaurant_tables(name)')
     .eq('restaurant_id', RESTAURANT_ID)
@@ -83,6 +96,25 @@ export default async function AdminDashboard({
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 min-w-[140px] flex-1">
               <p className="text-sm text-zinc-500 font-medium mb-1 flex items-center gap-2"><Users className="w-4 h-4 text-brand"/> Covers</p>
               <p className="text-3xl font-bold text-brand">{totalCovers}</p>
+            </div>
+
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 min-w-[140px] flex-1 flex flex-col justify-between">
+              <p className="text-sm text-zinc-500 font-medium mb-1">Status</p>
+              <form action={async () => {
+                'use server'
+                await toggleClosedDay(selectedDate, isDayClosed)
+              }}>
+                <button 
+                  type="submit"
+                  className={`w-full py-1 text-xs font-bold rounded-lg border transition-all ${
+                    isDayClosed 
+                      ? 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' 
+                      : 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20'
+                  }`}
+                >
+                  {isDayClosed ? 'CERRADO (Abrir)' : 'ABIERTO (Cerrar d\xEDa)'}
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -154,7 +186,7 @@ export default async function AdminDashboard({
                           {res.status === 'pending' && (
                             <form action={async () => {
                               'use server';
-                              const sb = await createClient()
+                              const sb = createServiceClient()
                               await sb.from('reservations').update({ status: 'confirmed' }).eq('id', res.id)
                             }}>
                               <button title="Confirm" className="p-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-md transition-colors">
@@ -165,7 +197,7 @@ export default async function AdminDashboard({
                           {(res.status === 'pending' || res.status === 'confirmed') && (
                             <form action={async () => {
                               'use server';
-                              const sb = await createClient()
+                              const sb = createServiceClient()
                               await sb.from('reservations').update({ status: 'no_show' }).eq('id', res.id)
                             }}>
                               <button title="Mark No Show" className="p-1.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-md transition-colors">
@@ -176,7 +208,7 @@ export default async function AdminDashboard({
                            {(res.status === 'pending' || res.status === 'confirmed') && (
                             <form action={async () => {
                               'use server';
-                              const sb = await createClient()
+                              const sb = createServiceClient()
                               await sb.from('reservations').update({ status: 'cancelled' }).eq('id', res.id)
                             }}>
                               <button title="Cancel" className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-md transition-colors">
@@ -187,7 +219,7 @@ export default async function AdminDashboard({
                           {res.status === 'confirmed' && (
                             <form action={async () => {
                               'use server';
-                              const sb = await createClient()
+                              const sb = createServiceClient()
                               await sb.from('reservations').update({ status: 'completed' }).eq('id', res.id)
                             }}>
                               <button title="Mark Completed" className="p-1.5 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 rounded-md transition-colors">
