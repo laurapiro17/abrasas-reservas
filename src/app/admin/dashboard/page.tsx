@@ -7,6 +7,7 @@ import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus
 import { format } from 'date-fns'
 import AdminDateSelector from '@/components/AdminDateSelector'
 import { toggleClosedDay } from './actions'
+import PrintButton from '@/components/PrintButton'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -157,13 +158,7 @@ export default async function AdminDashboard({
           <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Reservations for {format(new Date(selectedDate), 'MMMM d, yyyy')}</h2>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 rounded-xl text-sm font-medium transition-colors"
-              >
-                <Printer className="w-4 h-4" />
-                <span className="hidden sm:inline">Print List</span>
-              </button>
+              <PrintButton />
               <Link
                 href="/admin/dashboard/new"
                 className="new-btn flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-sm font-medium transition-colors"
