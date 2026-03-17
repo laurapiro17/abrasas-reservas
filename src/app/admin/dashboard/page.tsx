@@ -31,6 +31,13 @@ export default async function AdminDashboard({
   // Fetch reservations for the selected date
   const serviceClient = createServiceClient()
   
+  // Fetch Restaurant Info
+  const { data: restaurant } = await serviceClient
+    .from('restaurants')
+    .select('is_monday_closed')
+    .eq('id', RESTAURANT_ID)
+    .single()
+
   // Fetch closures for the selected date
   const { data: closedDay } = await serviceClient
     .from('closed_days')
@@ -39,7 +46,13 @@ export default async function AdminDashboard({
     .eq('closed_date', selectedDate)
     .single()
 
-  const isDayClosed = !!closedDay
+  const dayOfWeek = new Date(selectedDate).getDay() // 0 = Sunday, 1 = Monday, ...
+  const isMonday = dayOfWeek === 1
+  const ruleSaysClosed = isMonday && restaurant?.is_monday_closed
+
+  // If record exists, it overrides the rule.
+  // If no record, we follow the rule.
+  const isDayClosed = closedDay ? closedDay.is_closed : ruleSaysClosed
 
   const { data: reservations, error } = await serviceClient
     .from('reservations')
