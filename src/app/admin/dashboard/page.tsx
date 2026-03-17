@@ -3,14 +3,7 @@ export const revalidate = 0; // Disable full route caching for the dashboard
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings, Printer, BarChart3 } from 'lucide-react'
-import { format } from 'date-fns'
-import AdminDateSelector from '@/components/AdminDateSelector'
-import { toggleClosedDay } from './actions'
-import PrintButton from '@/components/PrintButton'
-import FloorPlan from '@/components/FloorPlan'
-import CalendarView from '@/components/CalendarView'
-import { LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare, Inbox } from 'lucide-react'
+import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Check, Settings, Printer, BarChart3, LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare, Inbox, Plus, ArrowLeft } from 'lucide-react'
 import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
 import { formatWhatsAppLink, getConfirmationMessage, getReminderMessage, getRejectionMessage } from '@/lib/whatsapp-utils'
 
@@ -117,18 +110,20 @@ export default async function AdminDashboard({
       `}} />
       
       {/* Top Nav */}
-      <header className="border-b border-zinc-800 bg-zinc-950 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <h1 className="text-xl font-bold tracking-tight">ABRASAS <span className="text-brand">Admin</span></h1>
+      <header className="border-b border-zinc-800 bg-zinc-950 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <h1 className="text-xl font-bold tracking-tight">
+          ABRASAS <span className="text-brand hidden sm:inline">Admin</span>
+        </h1>
         
-        <div className="flex items-center gap-4 text-sm font-medium">
-          <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
-          <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Link 
               href="/admin/dashboard/inbox" 
-              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all relative"
+              className={`flex items-center gap-2 p-2 rounded-xl transition-all relative ${pendingCount && pendingCount > 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20 px-3' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}
               title="Buzón de Pendientes"
             >
               <Inbox className="w-5 h-5" />
+              <span className="text-[10px] font-black tracking-widest hidden xs:inline">BUZÓN</span>
               {pendingCount && pendingCount > 0 ? (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-zinc-950 animate-bounce">
                   {pendingCount}
@@ -138,11 +133,10 @@ export default async function AdminDashboard({
 
             <Link 
               href="/admin/dashboard/reminders" 
-              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all relative"
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all"
               title="Recordatorios"
             >
               <MessageSquare className="w-5 h-5" />
-              <div className="absolute top-2 right-2 w-2 h-2 bg-brand rounded-full border-2 border-zinc-950" />
             </Link>
 
             <Link 
@@ -155,34 +149,49 @@ export default async function AdminDashboard({
 
             <Link 
               href="/admin/dashboard/analytics"
-              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all flex items-center gap-2"
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all"
               title="Estadísticas"
             >
               <BarChart3 className="w-5 h-5" />
-              <span className="hidden lg:inline text-sm font-medium">Estadísticas</span>
             </Link>
 
             <Link 
               href="/admin/dashboard/settings"
-              className="settings-btn p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all flex items-center gap-2"
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all"
               title="Ajustes"
             >
               <Settings className="w-5 h-5" />
-              <span className="hidden lg:inline text-sm font-medium">Ajustes</span>
             </Link>
-
-            <form action="/auth/signout" method="post">
-              <button 
-                type="submit"
-                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-all text-xs font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </form>
           </div>
+
+          <div className="h-4 w-[1px] bg-zinc-800 mx-1 hidden xs:block" />
+
+          <form action="/auth/signout" method="post">
+            <button 
+              type="submit"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-all text-xs font-medium"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Salir</span>
+            </button>
+          </form>
         </div>
       </header>
+      
+      {pendingCount && pendingCount > 0 ? (
+        <Link href="/admin/dashboard/inbox" className="bg-red-500 text-white px-6 py-2.5 flex items-center justify-between group overflow-hidden relative z-20">
+          <div className="flex items-center gap-3 text-sm font-bold relative z-10">
+            <div className="bg-white/20 p-1 rounded-lg">
+              <Inbox className="w-4 h-4 animate-pulse" />
+            </div>
+            <span>TIENES {pendingCount} RESERVAS PENDIENTES DE CONFIRMAR</span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px] font-black tracking-widest relative z-10 bg-black/10 px-2 py-1 rounded-md">
+            IR A GESTIONAR <ArrowLeft className="w-3 h-3 rotate-180" />
+          </div>
+          <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+        </Link>
+      ) : null}
 
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8">
