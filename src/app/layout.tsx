@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Book your table at ABRASAS BLANES. The finest cuts of meat over charcoal fire.",
 };
 
+import CookieBanner from "@/components/CookieBanner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,6 +22,7 @@ export default function RootLayout({
         className={`${inter.className} bg-background text-foreground antialiased min-h-screen selection:bg-brand selection:text-white`}
       >
         {children}
+        <CookieBanner />
       </body>
     </html>
   );
