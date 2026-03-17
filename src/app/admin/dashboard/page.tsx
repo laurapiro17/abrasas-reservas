@@ -3,8 +3,9 @@ export const revalidate = 0; // Disable full route caching for the dashboard
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check } from 'lucide-react'
+import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings } from 'lucide-react'
 import { format } from 'date-fns'
+import AdminDateSelector from '@/components/AdminDateSelector'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -49,6 +50,14 @@ export default async function AdminDashboard({
         
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
+          <Link 
+            href="/admin/dashboard/settings" 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 transition-colors text-zinc-300"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden md:inline">Settings</span>
+          </Link>
           <form action="/auth/signout" method="post">
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 transition-colors text-zinc-300">
               <LogOut className="w-4 h-4" />
@@ -64,20 +73,7 @@ export default async function AdminDashboard({
         {/* Date Selector & Metrics */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           
-          <div className="flex flex-col gap-2">
-            <label className="text-sm text-zinc-400 font-medium">Select Date</label>
-            <form className="relative flex items-center">
-              <Calendar className="absolute left-3 w-5 h-5 text-zinc-500" />
-              <input 
-                type="date" 
-                name="date"
-                defaultValue={selectedDate}
-                onChange={(e) => e.target.form?.submit()}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-brand"
-                style={{ colorScheme: "dark" }}
-              />
-            </form>
-          </div>
+          <AdminDateSelector initialDate={selectedDate} />
 
           <div className="flex gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 min-w-[140px] flex-1">

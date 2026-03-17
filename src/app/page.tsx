@@ -17,7 +17,7 @@ export default function Home() {
           ABRASAS BLANES
         </h1>
         <p className="text-zinc-400 text-center mb-10 text-sm">
-          Reserve your table for an unforgettable wood-fired experience.
+          Reserva tu mesa para una experiencia inolvidable a la brasa.
         </p>
 
         <div className="w-full bg-surface border border-border rounded-3xl p-6 shadow-2xl relative">
@@ -27,7 +27,7 @@ export default function Home() {
         </div>
         
         <div className="mt-12 text-center text-xs text-zinc-500">
-          <p>📍 Carrer Example 123, Blanes</p>
+          <p>📍 Avenida Europa 23, Blanes 17300</p>
           <p className="mt-1">© {new Date().getFullYear()} Abrasas Blanes.</p>
         </div>
       </div>

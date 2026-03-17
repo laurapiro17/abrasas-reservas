@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { format } from "date-fns";
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -80,6 +81,9 @@ export async function GET(request: Request) {
     };
 
     const availableSlots: string[] = [];
+    const now = new Date();
+    const isToday = date === format(now, "yyyy-MM-dd");
+    const currentMins = now.getHours() * 60 + now.getMinutes();
 
     // 4. Generate slots every 30 minutes for each service
     for (const service of services) {
@@ -88,6 +92,8 @@ export async function GET(request: Request) {
 
       // Last seating must allow for the full duration before closing
       for (let t = startMins; t <= endMins - service.duration_minutes; t += 30) {
+        // If it's today, don't show slots that have already passed (plus a 30 min buffer)
+        if (isToday && t < currentMins + 15) continue;
         // Is there at least one table that is free at this time?
         const hasFreeTable = tables.some((table) => isTableFree(table.id, t, service.duration_minutes));
         
