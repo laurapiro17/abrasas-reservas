@@ -10,8 +10,9 @@ import { toggleClosedDay } from './actions'
 import PrintButton from '@/components/PrintButton'
 import FloorPlan from '@/components/FloorPlan'
 import CalendarView from '@/components/CalendarView'
-import { LayoutList, Map as MapIcon, Calendar as CalendarIconView } from 'lucide-react'
+import { LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare } from 'lucide-react'
 import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
+import { formatWhatsAppLink, getConfirmationMessage, getReminderMessage } from '@/lib/whatsapp-utils'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -299,7 +300,7 @@ export default async function AdminDashboard({
                       <td className="px-6 py-4 text-right">
                         {/* Status Toggle Actions */}
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {res.status === 'pending' && (
+                           {res.status === 'pending' && (
                             <form action={async () => {
                               'use server';
                               const sb = createServiceClient()
@@ -309,6 +310,28 @@ export default async function AdminDashboard({
                                 <CheckCircle className="w-4 h-4" />
                               </button>
                             </form>
+                          )}
+                          {res.status === 'pending' && (
+                             <a 
+                               href={formatWhatsAppLink(res.customer_phone, getConfirmationMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               title="Confirm & WhatsApp"
+                               className="p-1.5 bg-brand/10 text-brand hover:bg-brand/20 rounded-md transition-colors"
+                             >
+                               <MessageSquare className="w-4 h-4" />
+                             </a>
+                          )}
+                          {res.status === 'confirmed' && (
+                             <a 
+                               href={formatWhatsAppLink(res.customer_phone, getReminderMessage(res.customer_name, format(new Date(res.reservation_date), 'dd/MM'), res.reservation_time.slice(0, 5)))}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               title="Send Reminder WhatsApp"
+                               className="p-1.5 bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 rounded-md transition-colors"
+                             >
+                               <MessageSquare className="w-4 h-4" />
+                             </a>
                           )}
                           {(res.status === 'pending' || res.status === 'confirmed') && (
                             <form action={async () => {
