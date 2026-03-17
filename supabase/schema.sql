@@ -25,6 +25,8 @@ CREATE TABLE restaurant_tables (
     name TEXT NOT NULL,
     capacity INT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
+    x_pos INT DEFAULT 0,
+    y_pos INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(restaurant_id, name)
 );
