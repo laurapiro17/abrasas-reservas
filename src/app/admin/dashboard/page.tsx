@@ -10,7 +10,7 @@ import { toggleClosedDay } from './actions'
 import PrintButton from '@/components/PrintButton'
 import FloorPlan from '@/components/FloorPlan'
 import CalendarView from '@/components/CalendarView'
-import { LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare } from 'lucide-react'
+import { LayoutList, Map as MapIcon, Calendar as CalendarIconView, MessageSquare, Inbox } from 'lucide-react'
 import { startOfMonth, endOfMonth, startOfDay } from 'date-fns'
 import { formatWhatsAppLink, getConfirmationMessage, getReminderMessage, getRejectionMessage } from '@/lib/whatsapp-utils'
 
@@ -91,6 +91,11 @@ export default async function AdminDashboard({
   // Calculate metrics
   const totalReservations = reservations?.length || 0;
   const totalCovers = reservations?.filter(r => r.status !== 'cancelled' && r.status !== 'no_show').reduce((sum, r) => sum + r.party_size, 0) || 0;
+  const { count: pendingCount } = await serviceClient
+    .from('reservations')
+    .select('*', { count: 'exact', head: true })
+    .eq('restaurant_id', RESTAURANT_ID)
+    .eq('status', 'pending')
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col font-sans">
@@ -117,7 +122,20 @@ export default async function AdminDashboard({
         
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link 
+              href="/admin/dashboard/inbox" 
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all relative"
+              title="Buzón de Pendientes"
+            >
+              <Inbox className="w-5 h-5" />
+              {pendingCount && pendingCount > 0 ? (
+                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-zinc-950 animate-bounce">
+                  {pendingCount}
+                </div>
+              ) : null}
+            </Link>
+
             <Link 
               href="/admin/dashboard/reminders" 
               className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all relative"
@@ -250,17 +268,26 @@ export default async function AdminDashboard({
           
           {view === 'map' ? (
             <div className="p-6">
-               <FloorPlan tables={tables || []} reservations={reservations || []} />
+               <FloorPlan 
+                 tables={tables || []} 
+                 reservations={reservations?.filter(r => r.status === 'confirmed' || r.status === 'completed') || []} 
+               />
+               <div className="mt-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-xs text-zinc-500 italic text-center">
+                 El plano muestra la ocupaci&oacute;n **REAL** (Confirmadas). Para gestionar pendientes, ve al Buz&oacute;n.
+               </div>
             </div>
           ) : view === 'calendar' ? (
-            <div className="p-6">
+            <div className="p-6 text-zinc-400">
               <CalendarView 
-                reservations={reservations || []} 
+                reservations={reservations?.filter(r => r.status === 'confirmed' || r.status === 'completed') || []} 
                 onDateSelect={async (date) => {
                   'use server'
                   redirect(`/admin/dashboard?date=${date}&view=list`)
                 }}
               />
+               <div className="mt-4 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-xs text-zinc-500 italic text-center">
+                 El calendario muestra solo reservas **CONFIRMADAS**.
+               </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -269,7 +296,7 @@ export default async function AdminDashboard({
                 <tr>
                   <th className="px-6 py-4 font-medium">Time / Table</th>
                   <th className="px-6 py-4 font-medium">Customer Details</th>
-                  <th className="px-6 py-4 font-medium">Party Size</th>
+                  <th className="px-6 py-4 font-medium text-center">Inbox / Pendientes</th>
                   <th className="px-6 py-4 font-medium">Status</th>
                   <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
@@ -283,7 +310,7 @@ export default async function AdminDashboard({
                   </tr>
                 ) : (
                   reservations?.map((res) => (
-                    <tr key={res.id} className="hover:bg-zinc-900/30 transition-colors group">
+                    <tr key={res.id} className={`hover:bg-zinc-900/30 transition-colors group ${res.status === 'pending' ? 'bg-red-500/5' : ''}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 font-medium text-white mb-1">
                           <Clock className="w-4 h-4 text-zinc-500" />
@@ -302,11 +329,14 @@ export default async function AdminDashboard({
                           </p>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-zinc-300">
-                          <Users className="w-4 h-4 text-zinc-500" />
-                          <span>{res.party_size}</span>
-                        </div>
+                      <td className="px-6 py-4 text-center">
+                         {res.status === 'pending' ? (
+                           <Link href="/admin/dashboard/inbox" className="inline-flex items-center gap-1.5 px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded text-[10px] font-black uppercase tracking-tighter hover:bg-red-500/20 transition-all">
+                             <Inbox className="w-3 h-3" /> Pendiente
+                           </Link>
+                         ) : (
+                           <span className="text-zinc-700 font-mono text-[10px]">—</span>
+                         )}
                       </td>
                       <td className="px-6 py-4">
                         <StatusBadge status={res.status} />
