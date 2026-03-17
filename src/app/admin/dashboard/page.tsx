@@ -137,32 +137,29 @@ export default async function AdminDashboard({
 
             <Link 
               href="/admin/dashboard/analytics"
-              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+              className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all flex items-center gap-2"
+              title="Estadísticas"
             >
               <BarChart3 className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">Analytics</span>
+              <span className="hidden lg:inline text-sm font-medium">Estadísticas</span>
             </Link>
-            <Link 
-              href="/admin/dashboard/customers"
-              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
-            >
-              <Users className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">History</span>
-            </Link>
+
             <Link 
               href="/admin/dashboard/settings"
-              className="settings-btn flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+              className="settings-btn p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-white transition-all flex items-center gap-2"
+              title="Ajustes"
             >
               <Settings className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">Settings</span>
+              <span className="hidden lg:inline text-sm font-medium">Ajustes</span>
             </Link>
+
             <form action="/auth/signout" method="post">
               <button 
                 type="submit"
                 className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-all text-xs font-medium"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </form>
           </div>
