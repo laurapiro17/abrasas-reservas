@@ -351,7 +351,7 @@ export default async function AdminDashboard({
                           <StatusBadge status={res.status} />
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-end gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                              {res.status === 'pending' && (
                                <>
                                  <form action={async () => {

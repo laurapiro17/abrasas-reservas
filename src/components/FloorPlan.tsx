@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from 'react'
 import { Users, Clock, Info, Move, Check } from 'lucide-react'
 import { updateTablePosition } from '@/app/admin/dashboard/actions'
