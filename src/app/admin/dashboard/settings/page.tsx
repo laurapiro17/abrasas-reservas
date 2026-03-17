@@ -273,6 +273,7 @@ export default async function SettingsPage() {
                 <tr>
                   <th className="px-6 py-3 font-medium">Table Name</th>
                   <th className="px-6 py-3 font-medium">Capacity</th>
+                  <th className="px-6 py-3 font-medium">Position (X, Y)</th>
                   <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
@@ -298,6 +299,24 @@ export default async function SettingsPage() {
                         defaultValue={table.capacity} 
                         className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 w-16 focus:ring-1 focus:ring-brand outline-none"
                       />
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <input 
+                          form={`table-form-${table.id}`}
+                          type="number" 
+                          name="x_pos" 
+                          defaultValue={table.x_pos || 0} 
+                          className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 w-12 text-xs focus:ring-1 focus:ring-brand outline-none"
+                        />
+                        <input 
+                          form={`table-form-${table.id}`}
+                          type="number" 
+                          name="y_pos" 
+                          defaultValue={table.y_pos || 0} 
+                          className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 w-12 text-xs focus:ring-1 focus:ring-brand outline-none"
+                        />
+                      </div>
                     </td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex justify-end gap-2">

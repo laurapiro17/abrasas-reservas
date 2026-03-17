@@ -52,10 +52,12 @@ export async function updateTable(formData: FormData) {
   const id = formData.get('id') as string
   const capacity = parseInt(formData.get('capacity') as string)
   const name = formData.get('name') as string
+  const x_pos = parseInt(formData.get('x_pos') as string) || 0
+  const y_pos = parseInt(formData.get('y_pos') as string) || 0
 
   const { error } = await supabase
     .from('restaurant_tables')
-    .update({ capacity, name })
+    .update({ capacity, name, x_pos, y_pos })
     .eq('id', id)
 
   if (error) throw new Error(error.message)
@@ -74,7 +76,9 @@ export async function createTable(formData: FormData) {
     .insert([{ 
       restaurant_id: RESTAURANT_ID,
       name, 
-      capacity 
+      capacity,
+      x_pos: 0,
+      y_pos: 0
     }])
 
   if (error) throw new Error(error.message)

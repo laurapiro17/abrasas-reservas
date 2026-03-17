@@ -3,18 +3,20 @@ export const revalidate = 0; // Disable full route caching for the dashboard
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings, Printer } from 'lucide-react'
+import { LogOut, Calendar, Users, Clock, CheckCircle, XCircle, AlertCircle, Plus, Check, Settings, Printer, BarChart3 } from 'lucide-react'
 import { format } from 'date-fns'
 import AdminDateSelector from '@/components/AdminDateSelector'
 import { toggleClosedDay } from './actions'
 import PrintButton from '@/components/PrintButton'
+import FloorPlan from '@/components/FloorPlan'
+import { LayoutList, Map as MapIcon } from 'lucide-react'
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
 export default async function AdminDashboard({
   searchParams,
 }: {
-  searchParams: { date?: string }
+  searchParams: { date?: string, view?: 'list' | 'map' }
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,6 +29,7 @@ export default async function AdminDashboard({
   // Await searchParams before using it in Next 15+
   const resolvedParams = await searchParams;
   const selectedDate = resolvedParams?.date || format(new Date(), 'yyyy-MM-dd')
+  const view = resolvedParams?.view || 'list'
 
   // Fetch reservations for the selected date
   const serviceClient = createServiceClient()
@@ -65,6 +68,14 @@ export default async function AdminDashboard({
     console.error("Error fetching reservations:", error)
   }
 
+  // Fetch all tables for the floor plan
+  const { data: tables } = await serviceClient
+    .from('restaurant_tables')
+    .select('*')
+    .eq('restaurant_id', RESTAURANT_ID)
+    .eq('is_active', true)
+    .order('name', { ascending: true })
+
   // Calculate metrics
   const totalReservations = reservations?.length || 0;
   const totalCovers = reservations?.filter(r => r.status !== 'cancelled' && r.status !== 'no_show').reduce((sum, r) => sum + r.party_size, 0) || 0;
@@ -95,6 +106,13 @@ export default async function AdminDashboard({
         <div className="flex items-center gap-4 text-sm font-medium">
           <span className="text-zinc-400 hidden sm:inline-block">{user.email}</span>
           <div className="flex items-center gap-4">
+            <Link 
+              href="/admin/dashboard/analytics"
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm font-medium">Analytics</span>
+            </Link>
             <Link 
               href="/admin/dashboard/customers"
               className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
@@ -168,8 +186,24 @@ export default async function AdminDashboard({
 
         {/* Reservations List */}
         <div className="bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Reservations for {format(new Date(selectedDate), 'MMMM d, yyyy')}</h2>
+          <div className="p-6 border-b border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+               <h2 className="text-lg font-semibold">Reservations for {format(new Date(selectedDate), 'MMMM d, yyyy')}</h2>
+               <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800 scale-90 sm:scale-100">
+                  <Link 
+                    href={`/admin/dashboard?date=${selectedDate}&view=list`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'list' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    <LayoutList className="w-4 h-4" /> List
+                  </Link>
+                  <Link 
+                    href={`/admin/dashboard?date=${selectedDate}&view=map`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'map' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-white'}`}
+                  >
+                    <MapIcon className="w-4 h-4" /> Map
+                  </Link>
+               </div>
+            </div>
             <div className="flex items-center gap-3">
               <PrintButton />
               <Link
@@ -182,7 +216,12 @@ export default async function AdminDashboard({
             </div>
           </div>
           
-          <div className="overflow-x-auto">
+          {view === 'map' ? (
+            <div className="p-6">
+               <FloorPlan tables={tables || []} reservations={reservations || []} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-zinc-900/50 text-zinc-400 border-b border-zinc-800">
                 <tr>
@@ -285,6 +324,7 @@ export default async function AdminDashboard({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </main>
     </div>
