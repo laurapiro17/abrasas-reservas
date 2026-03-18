@@ -372,6 +372,15 @@ export default async function AdminDashboard({
                                  >
                                    <MessageSquare className="w-4 h-4" />
                                  </a>
+                                 <form action={async () => {
+                                   'use server';
+                                   const sb = createServiceClient()
+                                   await sb.from('reservations').update({ status: 'cancelled' }).eq('id', res.id)
+                                 }}>
+                                   <button title="Solo Cancelar (Sin WhatsApp)" className="p-1.5 bg-zinc-800 text-zinc-500 hover:text-red-500 rounded-md transition-colors">
+                                     <XCircle className="w-4 h-4" />
+                                   </button>
+                                 </form>
                                </>
                              )}
 
@@ -393,6 +402,15 @@ export default async function AdminDashboard({
                                  }}>
                                    <button title="Completada (Sentados)" className="p-1.5 bg-zinc-800 text-zinc-400 hover:text-white rounded-md transition-colors">
                                      <Check className="w-4 h-4" />
+                                   </button>
+                                 </form>
+                                 <form action={async () => {
+                                   'use server';
+                                   const sb = createServiceClient()
+                                   await sb.from('reservations').update({ status: 'cancelled' }).eq('id', res.id)
+                                 }}>
+                                   <button title="Solo Cancelar (Sin WhatsApp)" className="p-1.5 bg-zinc-800 text-zinc-500 hover:text-red-500 rounded-md transition-colors">
+                                     <XCircle className="w-4 h-4" />
                                    </button>
                                  </form>
                                </>
